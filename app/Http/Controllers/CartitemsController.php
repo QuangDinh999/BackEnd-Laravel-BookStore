@@ -40,8 +40,14 @@ class CartitemsController extends Controller
      */
     public function store(StorecartitemsRequest $request)
     {
-        $cartitem = cartitems::create($request->all());
-        return response()->json($cartitem);
+        $user_id = $request->userID;
+        $cart_id = cart::where('customer_id', $user_id)->value('id');
+        cartitems::create([
+            'amount' => $request->amount,
+            'book_id' => $request->bookID,
+            'cart_id' => $cart_id,
+        ]);
+        return response()->json(['success' => true]);
     }
 
     /**

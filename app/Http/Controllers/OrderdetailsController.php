@@ -25,7 +25,9 @@ class OrderdetailsController extends Controller
      */
     public function create()
     {
-        //
+        orderdetails::create([
+
+        ]);
     }
 
     /**

@@ -59,9 +59,12 @@ class AuthController extends Controller
 
     public function getUser(Request $request)
     {
-        $user = Auth::user();
-        return response()->json($user);
+//        $user = Auth::user();
+//        return response()->json($user);
 //        $user = JWTAuth::toUser($token);
 //        return response()->json($user);
+
+        $user = user::where('email', $request->email)->get();
+        return response()->json($user);
     }
 }

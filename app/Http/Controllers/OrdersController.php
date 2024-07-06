@@ -15,7 +15,8 @@ class OrdersController extends Controller
      */
     public function index()
     {
-        //
+        $orders = orders::all();
+        return response()->json($orders);
     }
 
     /**
@@ -36,7 +37,18 @@ class OrdersController extends Controller
      */
     public function store(StoreordersRequest $request)
     {
-        //
+        $order = orders::create([
+            'customer_name' => $request->name,
+            'customer_phone' => $request->phoneNumber,
+            'customer_address' => $request->address,
+            'status' => 0,
+            'payment_id' => $request->payment_id,
+            'order_note' => $request->order_note,
+
+            'customer_id' => 3
+        ]);
+
+
     }
 
     /**

@@ -33,7 +33,7 @@ Route::prefix('/auth')->group(function (){
 });
 
 Route::prefix('/user')->group(function (){
-    Route::get('', [\App\Http\Controllers\AuthController::class, 'getUser']);
+    Route::get('/{email}', [\App\Http\Controllers\AuthController::class, 'getUser']);
 });
 
 // http://localhost/PHP_Book_Laravel-main/public/api/...
@@ -76,5 +76,7 @@ Route::prefix('home')->group(function (){
     Route::get('/cart', [\App\Http\Controllers\CartController::class, 'index']);
     Route::get('/cartitems', [\App\Http\Controllers\CartitemsController::class, 'index']);
     Route::post('/cartitems/add', [\App\Http\Controllers\CartitemsController::class, 'store']);
-    Route::post('/vnpay/{price}', [\App\Http\Controllers\PaymentController::class, 'vnPay']);
+    Route::post('/vnpay', [\App\Http\Controllers\PaymentController::class, 'vnPay']);
+    Route::get('/vnpayreturn', [\App\Http\Controllers\PaymentController::class, 'vnpayReturn']);
+    Route::get('order', [\App\Http\Controllers\OrdersController::class, 'index']);
 });
