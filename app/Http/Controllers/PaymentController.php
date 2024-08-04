@@ -7,7 +7,9 @@ use App\Models\payment;
 use App\Http\Requests\StorepaymentRequest;
 use App\Http\Requests\UpdatepaymentRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
@@ -103,7 +105,7 @@ class PaymentController extends Controller
     public function vnPay(Request $request)
     {
         $vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
-        $vnp_Returnurl = "http://localhost/BackEnd-Laravel-BookStore/public/api/home/vnpayreturn";
+        $vnp_Returnurl = "http://localhost/BackEnd-Laravel-BookStore/public/api/vnpayreturn";
         $vnp_TmnCode = "8ASB91CS";//Mã website tại VNPAY
         $vnp_HashSecret = "H2M3M5OO7W2F4BFTNHVTBZV31XTFEVK4"; //Chuỗi bí mật
 
@@ -115,10 +117,19 @@ class PaymentController extends Controller
         $vnp_BankCode = 'NCB';
         $vnp_IpAddr = $_SERVER['REMOTE_ADDR'];
         $cartitems = $request->input('cartitems');
-        $cartitems_json = json_encode($cartitems);
-        $cartitems_base64 = base64_encode($cartitems_json);
+
+        $array = [];
+        $array = Arr::add($array, 'cartitems', $cartitems);
+        $array = Arr::add($array, 'name', $request->input('name'));
+        $array = Arr::add($array, 'phoneNumber',$request->input('phoneNumber'));
+        $array = Arr::add($array, 'address', $request->input('address'));
+        $array = Arr::add($array, 'order_note', $request->input('order_note'));
 
 
+
+        session(['customer' => $array]);
+        $customer = session('customer');
+        Log::info('vnPay Session ID: ' . session()->getId());
         $inputData = array(
             "vnp_Version" => "2.1.0",
             "vnp_TmnCode" => $vnp_TmnCode,
@@ -132,11 +143,7 @@ class PaymentController extends Controller
             "vnp_OrderType" => $vnp_OrderType,
             "vnp_ReturnUrl" => $vnp_Returnurl,
             "vnp_TxnRef" => $vnp_TxnRef,
-//            "customer_name" => $request->input('name'),
-//            "phone_number" => $request->input('phoneNumber'),
-//            "address" => $request->input('address'),
-//            "order_note" => $request->input('order_note'),
-//            "cartitems" => $cartitems_base64,
+
 
         );
 
@@ -169,11 +176,16 @@ class PaymentController extends Controller
         return response()->json([
             'success' => true,
             'data' => $request->input('totalPrice'),
-            'url' => $vnp_Url]);
+            'url' => $vnp_Url,
+            'result' => $customer,
+            'check' => session()->getId()]);
     }
 
     public function vnpayReturn(Request $request)
     {
+        // Log session ID
+        Log::info('vnpayReturn Session ID: ' . session()->getId());
+
         $vnp_SecureHash = $request->input('vnp_SecureHash');
         $inputData = $request->except('vnp_SecureHash');
 
@@ -188,32 +200,14 @@ class PaymentController extends Controller
         $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
         if ($secureHash == $vnp_SecureHash) {
             if ($request->input('vnp_ResponseCode') == '00') {
-                $customer_name = $request->input('customer_name');
-//                $cartitems_base64 = $request->input('cartitems');
-//                $cartitems_json = base64_decode($cartitems_base64);
-//                $cartitems = json_decode($cartitems_json, true);
-                if(isset($customer_name)) {
-                    dd($customer_name);
+                if (session()->has('customer')) {
+                    Log::info('Customer session found in vnpayReturn', session('customer'));
+                    dd(session('customer'));
                     return redirect('http://localhost:3000/thanks');
+                } else {
+                    Log::info('Customer session NOT found in vnpayReturn');
+                    dd(session('customer'));
                 }
-
-                // Thanh toán thành công, tạo đơn hàng
-//                DB::beginTransaction();
-//                try {
-//                    $order = orders::create([
-//                        'user_id' => $request->user()->id,
-//                        'order_info' => $request->input('vnp_OrderInfo'),
-//                        'amount' => $request->input('vnp_Amount') / 100,
-//                        'txn_ref' => $request->input('vnp_TxnRef'),
-//                        'status' => 'completed',
-//                    ]);
-//
-//                    DB::commit();
-//                    return redirect('/thanks')->with('success', 'Payment successful!');
-//                } catch (\Exception $e) {
-//                    DB::rollBack();
-//                    return redirect('/thanks')->with('error', 'Could not create order.');
-//                }
             } else {
                 return redirect('/thanks')->with('error', 'Payment failed.');
             }
@@ -222,5 +216,4 @@ class PaymentController extends Controller
         }
     }
 }
-
 

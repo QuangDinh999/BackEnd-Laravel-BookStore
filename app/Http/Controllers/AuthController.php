@@ -64,7 +64,7 @@ class AuthController extends Controller
 //        $user = JWTAuth::toUser($token);
 //        return response()->json($user);
 
-        $user = user::where('email', $request->email)->get();
+        $user = user::all();
         return response()->json($user);
     }
 }
